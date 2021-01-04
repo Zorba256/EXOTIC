@@ -508,7 +508,7 @@ def getJulianTime(hdul):
         if "start" in hdul[0].header.comments['MJD-OBS']:
             exptime_offset = exp / 2. / 60. / 60. / 24.  # assume exptime is in seconds for now
     else:
-        if 'T' in hdul[0].header['DATE-OBS']:
+        if 'T' in hdul[0].header.get('DATE-OBS',""):
             gDateTime = hdul[0].header['DATE-OBS']  # gets the gregorian date and time from the fits file header
         else:
             gDateTime = "{}T{}".format(hdul[0].header['DATE-OBS'], hdul[0].header['TIME-OBS'])
@@ -1307,7 +1307,6 @@ def image_alignment(imagedata, roi=1):
             sys.stdout.write(f"Aligning Image {i + 1} of {len(imagedata)}\r")
             log.debug(f"Aligning Image {i + 1} of {len(imagedata)}\r")
             sys.stdout.flush()
-            
             results = aa.find_transform(image_file[roiy,roix], imagedata[0][roiy,roix])
             rot[i] = results[0].rotation
             pos[i] = results[0].translation
@@ -2272,17 +2271,6 @@ def main():
                 # ----TIME SORT THE FILES-------------------------------------------------------------
                 for fileName in inputfiles:  # Loop through all the fits files in the directory and executes data reduction
 
-                    # fitsHead = fits.open(name=fileName, memmap=False, cache=False, lazy_load_hdus=False)  # opens the file
-
-                    # FOR 61'' DATA ONLY: ONLY REDUCE DATA FROM B FILTER
-                    # if fitsHead[0].header ['FILTER']== 'Harris-B':
-                    #     #TIME
-                    #     timeVal = getJulianTime(fitsHead) #gets the julian time registered in the fits header
-                    #     timeList.append(timeVal) #adds to time value list
-                    #     fileNameList.append (fileName)
-                    # fitsHead.close()  # close stream
-                    # del fitsHead
-
                     # Keeps a list of file names
                     fileNameStr.append(fileName)
 
@@ -2349,7 +2337,7 @@ def main():
                 airMassList = airMassList[np.argsort(timeList)]
 
                 # TODO add option to inits file
-                cosmicrayfilter_bool = False
+                cosmicrayfilter_bool = True
                 if cosmicrayfilter_bool:
                     log.info("Filtering your data for cosmic rays.")
                     targx, targy, targamplitude, targsigX, targsigY, targrot, targoff = fit_centroid(allImageData[0], [exotic_UIprevTPX, exotic_UIprevTPY], box=10)
@@ -2693,8 +2681,10 @@ def main():
                         arrayAirmass = airMassList[~filtered_data]
 
                         # remove nans
-                        nanmask = np.isnan(arrayFinalFlux) | np.isnan(arrayNormUnc) | np.isnan(arrayTimes) | np.isnan(arrayAirmass)
+                        nanmask = np.isnan(arrayFinalFlux) | np.isnan(arrayNormUnc) | np.isnan(arrayTimes) | np.isnan(arrayAirmass) | arrayFinalFlux > 0 | arrayNormUnc > 0
                         nanmask = nanmask | np.isinf(arrayFinalFlux) | np.isinf(arrayNormUnc) | np.isinf(arrayTimes) | np.isinf(arrayAirmass)
+                        if np.sum(~nanmask) == 0:
+                            continue
                         arrayFinalFlux = arrayFinalFlux[~nanmask]
                         arrayNormUnc = arrayNormUnc[~nanmask]
                         arrayTimes = arrayTimes[~nanmask]
