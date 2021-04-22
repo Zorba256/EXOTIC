@@ -998,7 +998,7 @@ def variableStarCheck(ra, dec):
         gaiaQuery = Gaia.cone_search_async(sample, radius)
         gaiaResult = gaiaQuery.get_results()
     except Exception:
-        log.info("Not able to query information from Simbad.")
+        log.info("Not able to query information from GAIA.")
         return False
 
     # Individually go through the phot_variable_flag indicator for each star to see if variable or not
